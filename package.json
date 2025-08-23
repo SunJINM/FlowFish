@@ -1,0 +1,57 @@
+{
+  "name": "flow-fish",
+  "version": "1.0.0",
+  "description": "智能桌面小鱼助手 - 让工作更有趣",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-all": "electron-builder --win --mac --linux",
+    "dist": "npm run build"
+  },
+  "keywords": ["desktop", "fish", "assistant", "productivity", "fun"],
+  "author": "Flow Fish Team",
+  "license": "MIT",
+  "build": {
+    "appId": "com.flowfish.desktop",
+    "productName": "Flow Fish",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "fish.html",
+      "fish.css",
+      "fish.js",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}

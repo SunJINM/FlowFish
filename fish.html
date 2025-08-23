@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Fish - 桌面小鱼</title>
+    <link rel="stylesheet" href="fish.css">
+</head>
+<body>
+    <div class="ocean-container">
+        <div class="fish-container" id="fishContainer">
+            <!-- 小鱼会动态创建 -->
+        </div>
+        
+        <!-- 开发模式指示器 -->
+        <div class="dev-indicator" id="devIndicator" style="display: none;">
+            <div class="indicator-content">
+                <h3>🐟 Flow Fish 开发模式</h3>
+                <p>当前小鱼数量: <span id="fishCount">0</span></p>
+                <p>快捷键: Ctrl+Alt+F 显示/隐藏</p>
+                <div class="controls">
+                    <button onclick="addFish()">➕ 添加小鱼</button>
+                    <button onclick="removeFish()">➖ 减少小鱼</button>
+                    <button onclick="resetFishes()">🔄 重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="fish.js"></script>
+</body>
+</html>

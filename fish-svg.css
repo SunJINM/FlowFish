@@ -1,0 +1,291 @@
+/* Flow Fish SVG升级版样式文件 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ocean-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    pointer-events: none; /* 确保不阻挡鼠标事件 */
+}
+
+.fish-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* SVG小鱼基础样式 */
+.fish {
+    position: absolute;
+    width: 60px;
+    height: 40px;
+    z-index: 999999;
+    cursor: pointer;
+    user-select: none;
+    pointer-events: auto; /* 小鱼本身可以接收鼠标事件 */
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fish svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 3px 10px rgba(0,0,0,0.2));
+    transition: filter 0.3s ease;
+}
+
+/* 游泳动画 */
+.fish.swimming {
+    animation: swimSVG 3s ease-in-out infinite;
+}
+
+@keyframes swimSVG {
+    0%, 100% { 
+        transform: translateY(0) rotate(0deg); 
+    }
+    25% { 
+        transform: translateY(-5px) rotate(2deg); 
+    }
+    75% { 
+        transform: translateY(5px) rotate(-2deg); 
+    }
+}
+
+/* 鱼尾摆动动画 */
+.fish svg .fish-tail {
+    animation: tailWag 2s ease-in-out infinite;
+    transform-origin: 80% 50%;
+}
+
+@keyframes tailWag {
+    0%, 100% { transform: rotate(0deg) scaleX(1); }
+    25% { transform: rotate(-8deg) scaleX(0.9); }
+    75% { transform: rotate(8deg) scaleX(0.9); }
+}
+
+/* 鱼鳍摆动 */
+.fish svg .fish-fin {
+    animation: finWave 1.8s ease-in-out infinite;
+    transform-origin: center;
+}
+
+@keyframes finWave {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(15deg); }
+}
+
+/* 悬停效果 */
+.fish:hover {
+    transform: scale(1.4);
+}
+
+.fish:hover svg {
+    filter: drop-shadow(0 6px 20px rgba(0,0,0,0.4));
+}
+
+.fish:hover svg .fish-tail {
+    animation-duration: 0.8s; /* 加速摆尾 */
+}
+
+/* 点击反应动画 */
+.fish.clicked {
+    animation: fishReaction 1s ease-out;
+}
+
+@keyframes fishReaction {
+    0% { transform: scale(1) rotate(0deg); }
+    20% { transform: scale(1.8) rotate(90deg); }
+    40% { transform: scale(1.6) rotate(180deg); }
+    60% { transform: scale(1.8) rotate(270deg); }
+    80% { transform: scale(1.4) rotate(360deg); }
+    100% { transform: scale(1) rotate(360deg); }
+}
+
+/* 逃跑动画 */
+.fish.escaping {
+    animation: escapeSwim 0.5s ease-in infinite;
+}
+
+.fish.escaping svg .fish-tail {
+    animation: panicTail 0.2s ease-in-out infinite;
+}
+
+@keyframes escapeSwim {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(5deg); }
+    75% { transform: translateY(8px) rotate(-5deg); }
+}
+
+@keyframes panicTail {
+    0%, 100% { transform: rotate(0deg) scaleX(1); }
+    25% { transform: rotate(-20deg) scaleX(0.7); }
+    75% { transform: rotate(20deg) scaleX(0.7); }
+}
+
+/* 小鱼转向 */
+.fish.turning-left {
+    transform: scaleX(-1);
+}
+
+.fish.turning-right {
+    transform: scaleX(1);
+}
+
+/* 群体行为动画 */
+.fish.schooling svg {
+    filter: drop-shadow(0 0 15px rgba(116, 185, 255, 0.8));
+}
+
+.fish.schooling svg .fish-body {
+    animation: schoolingGlow 1s ease-in-out;
+}
+
+@keyframes schoolingGlow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* 小鱼产卵效果（新鱼出现时） */
+.fish.spawning {
+    animation: spawn 1.5s ease-out;
+}
+
+@keyframes spawn {
+    0% { 
+        opacity: 0;
+        transform: scale(0.2) rotate(180deg);
+    }
+    50% { 
+        opacity: 0.8;
+        transform: scale(1.3) rotate(90deg);
+    }
+    100% { 
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/* 小鱼消失效果 */
+.fish.disappearing {
+    animation: disappear 1s ease-in;
+}
+
+@keyframes disappear {
+    0% { 
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8) rotate(360deg);
+    }
+    100% { 
+        opacity: 0;
+        transform: scale(0.2) rotate(720deg);
+    }
+}
+
+/* 气泡效果（可选装饰） */
+.fish svg .bubble {
+    animation: bubbleFloat 3s ease-in-out infinite;
+    opacity: 0;
+}
+
+@keyframes bubbleFloat {
+    0% { 
+        opacity: 0;
+        transform: translateY(0) scale(0.5);
+    }
+    30% {
+        opacity: 0.8;
+        transform: translateY(-10px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.3);
+    }
+}
+
+/* 开发模式指示器 */
+.dev-indicator {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    z-index: 1000000;
+    font-size: 14px;
+    pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.indicator-content h3 {
+    margin-bottom: 10px;
+    color: #4ecdc4;
+}
+
+.indicator-content p {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.controls button {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.3s ease;
+}
+
+.controls button:hover {
+    background: #26a69a;
+    transform: translateY(-1px);
+}
+
+/* 响应式设计 */
+@media (max-width: 1366px) {
+    .fish {
+        width: 50px;
+        height: 35px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .fish {
+        width: 45px;
+        height: 30px;
+    }
+    
+    .dev-indicator {
+        top: 10px;
+        left: 10px;
+        padding: 15px;
+        font-size: 12px;
+    }
+}
