@@ -1,5 +1,6 @@
 /**
  * Flow Fish SVG版本 - 包含小丑鱼样式的桌面小鱼
+ * 集成 Anime.js 动画系统
  */
 
 const { ipcRenderer } = require('electron');
@@ -12,6 +13,17 @@ class FlowFishSVG {
         this.screenWidth = window.innerWidth;
         this.screenHeight = window.innerHeight;
         this.isDevMode = process.argv && process.argv.includes('--dev');
+        
+        // 初始化动画管理器
+        this.animationManager = new FishAnimationManager();
+        this.animationManager.init();
+        
+        // 初始化自然游动系统
+        this.naturalSwimming = new NaturalSwimmingSystem(
+            this.screenWidth, 
+            this.screenHeight, 
+            80 // boundaryMargin
+        );
         
         // 小鱼颜色配置（包含小丑鱼）
         this.fishColors = [
@@ -280,6 +292,14 @@ class FlowFishSVG {
         this.container.appendChild(fish);
         this.fishes.push(fish);
         
+        // 设置初始随机朝向
+        const initialAngle = Math.random() * Math.PI * 2;
+        const initialDegrees = (initialAngle * 180 / Math.PI);
+        fish.style.transform = `rotate(${initialDegrees}deg)`;
+        
+        // 启动 Anime.js 动画系统
+        this.startFishAnimations(fish);
+        
         fish.addEventListener('click', (e) => {
             e.stopPropagation();
             this.onFishClick(fish);
@@ -292,11 +312,41 @@ class FlowFishSVG {
         return fish;
     }
 
+    /**
+     * 启动鱼的所有动画
+     * @param {HTMLElement} fish - 鱼元素
+     */
+    startFishAnimations(fish) {
+        // 移除 CSS 游泳动画类
+        fish.classList.remove('swimming');
+        
+        const personality = {
+            energy: fish.fishData.energy,
+            speed: fish.fishData.speed,
+            personality: fish.fishData.personality
+        };
+        
+        // 启动基础游泳动画
+        this.animationManager.createSwimAnimation(fish, personality);
+        
+        // 启动鱼尾和鱼鳍动画
+        const tailElement = fish.querySelector('.fish-tail');
+        const finElements = fish.querySelectorAll('.fish-fin');
+        
+        if (tailElement) {
+            this.animationManager.createTailAnimation(tailElement, personality);
+        }
+        
+        finElements.forEach(fin => {
+            this.animationManager.createFinAnimation(fin, personality);
+        });
+    }
+
     onFishClick(fish) {
         console.log(`👆 小鱼被点击: ${fish.fishData.id}`);
         
-        fish.classList.add('clicked');
-        setTimeout(() => fish.classList.remove('clicked'), 1000);
+        // 使用 Anime.js 点击反应动画
+        this.animationManager.createClickReaction(fish);
         
         this.makeFishEscape(fish);
         this.scareNearbyFish(fish);
@@ -322,23 +372,30 @@ class FlowFishSVG {
         
         data.isEscaping = true;
         data.speed = this.config.clickEscapeSpeed;
-        fish.classList.add('escaping');
         
         const escapeAngle = Math.random() * Math.PI * 2;
         const escapeDistance = 250 + Math.random() * 350;
         
-        data.targetX = data.x + Math.cos(escapeAngle) * escapeDistance;
-        data.targetY = data.y + Math.sin(escapeAngle) * escapeDistance;
+        const targetX = Math.max(this.config.boundaryMargin, 
+            Math.min(data.x + Math.cos(escapeAngle) * escapeDistance, this.screenWidth - this.config.boundaryMargin));
+        const targetY = Math.max(this.config.boundaryMargin, 
+            Math.min(data.y + Math.sin(escapeAngle) * escapeDistance, this.screenHeight - this.config.boundaryMargin));
         
-        data.targetX = Math.max(this.config.boundaryMargin, 
-            Math.min(data.targetX, this.screenWidth - this.config.boundaryMargin));
-        data.targetY = Math.max(this.config.boundaryMargin, 
-            Math.min(data.targetY, this.screenHeight - this.config.boundaryMargin));
+        // 使用 Anime.js 逃跑动画
+        const direction = {
+            x: Math.cos(escapeAngle),
+            y: Math.sin(escapeAngle)
+        };
+        
+        this.animationManager.createEscapeAnimation(fish, direction);
+        
+        // 同时更新目标位置用于后续移动
+        data.targetX = targetX;
+        data.targetY = targetY;
         
         setTimeout(() => {
             data.isEscaping = false;
             data.speed = this.config.minSpeed + Math.random() * (this.config.maxSpeed - this.config.minSpeed);
-            fish.classList.remove('escaping');
         }, this.config.clickEscapeDuration);
     }
 
@@ -361,62 +418,26 @@ class FlowFishSVG {
     }
 
     startSwimming() {
-        const animate = () => {
+        // 启动定时器处理鱼的行为逻辑，不再处理位置动画
+        this.behaviorInterval = setInterval(() => {
             this.fishes.forEach(fish => {
-                this.updateFishPosition(fish);
                 this.updateFishBehavior(fish);
+                // 定期检查是否需要设置新目标
+                const data = fish.fishData;
+                const now = Date.now();
+                if (now - data.lastDirectionChange > data.directionChangeInterval) {
+                    this.setNewTarget(fish);
+                    data.lastDirectionChange = now;
+                    data.directionChangeInterval = this.config.directionChangeMin + 
+                        Math.random() * (this.config.directionChangeMax - this.config.directionChangeMin);
+                }
             });
-            requestAnimationFrame(animate);
-        };
-        animate();
+        }, 100); // 每100ms检查一次行为
+        
+        console.log('🌊 小鱼行为系统启动 (基于 Anime.js)');
     }
 
-    updateFishPosition(fish) {
-        const data = fish.fishData;
-        const now = Date.now();
-        
-        if (now - data.lastDirectionChange > data.directionChangeInterval) {
-            this.setNewTarget(fish);
-            data.lastDirectionChange = now;
-            data.directionChangeInterval = this.config.directionChangeMin + 
-                Math.random() * (this.config.directionChangeMax - this.config.directionChangeMin);
-        }
-        
-        const dx = data.targetX - data.x;
-        const dy = data.targetY - data.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 5) {
-            const moveX = (dx / distance) * data.speed * data.energy;
-            const moveY = (dy / distance) * data.speed * data.energy;
-            
-            data.x += moveX;
-            data.y += moveY;
-            
-            const margin = this.config.boundaryMargin;
-            if (data.x < margin || data.x > this.screenWidth - margin) {
-                data.x = Math.max(margin, Math.min(data.x, this.screenWidth - margin));
-                data.targetX = this.screenWidth / 2 + (Math.random() - 0.5) * 300;
-            }
-            if (data.y < margin || data.y > this.screenHeight - margin) {
-                data.y = Math.max(margin, Math.min(data.y, this.screenHeight - margin));
-                data.targetY = this.screenHeight / 2 + (Math.random() - 0.5) * 300;
-            }
-            
-            if (moveX > 0.1) {
-                fish.classList.remove('turning-left');
-                fish.classList.add('turning-right');
-            } else if (moveX < -0.1) {
-                fish.classList.remove('turning-right');
-                fish.classList.add('turning-left');
-            }
-            
-            fish.style.left = data.x + 'px';
-            fish.style.top = data.y + 'px';
-        } else {
-            this.setNewTarget(fish);
-        }
-    }
+    // updateFishPosition 方法已删除，位置更新由 Anime.js 处理
 
     updateFishBehavior(fish) {
         const data = fish.fishData;
@@ -464,8 +485,9 @@ class FlowFishSVG {
                 data.targetX += (centerX - data.targetX) * attraction;
                 data.targetY += (centerY - data.targetY) * attraction;
                 
-                fish.classList.add('schooling');
-                setTimeout(() => fish.classList.remove('schooling'), 1000);
+                // 使用 Anime.js 群体动画效果
+                const schoolingGroup = [fish, ...nearbyFish];
+                this.animationManager.createSchoolingAnimation(schoolingGroup);
             }
         }
     }
@@ -494,33 +516,36 @@ class FlowFishSVG {
     }
 
     setNewTarget(fish) {
-        const data = fish.fishData;
-        const margin = this.config.boundaryMargin;
+        if (fish.fishData.isEscaping || fish.fishData.isMoving) return;
         
-        if (data.personality > 0.7) {
-            data.targetX = margin + Math.random() * (this.screenWidth - margin * 2);
-            data.targetY = margin + Math.random() * (this.screenHeight - margin * 2);
-        } else if (data.personality > 0.4) {
-            const moveRange = 250;
-            data.targetX = Math.max(margin, Math.min(
-                data.x + (Math.random() - 0.5) * moveRange,
-                this.screenWidth - margin
-            ));
-            data.targetY = Math.max(margin, Math.min(
-                data.y + (Math.random() - 0.5) * moveRange,
-                this.screenHeight - margin
-            ));
-        } else {
-            const moveRange = 120;
-            data.targetX = Math.max(margin, Math.min(
-                data.x + (Math.random() - 0.5) * moveRange,
-                this.screenWidth - margin
-            ));
-            data.targetY = Math.max(margin, Math.min(
-                data.y + (Math.random() - 0.5) * moveRange,
-                this.screenHeight - margin
-            ));
-        }
+        const data = fish.fishData;
+        data.isMoving = true;
+        
+        // 生成自然游动路径
+        const swimmingPath = this.naturalSwimming.generateSwimmingPath(fish);
+        
+        console.log(`🐟 ${data.id.slice(-6)} 开始${swimmingPath.mode}模式游动，路径${swimmingPath.points.length}点，耗时${swimmingPath.duration.toFixed(1)}秒`);
+        
+        // 设置路径完成回调
+        data.onPathComplete = () => {
+            // 游动完成后，更新能量和状态
+            data.energy = Math.min(1.0, data.energy + 0.05);
+            data.isMoving = false;
+            
+            // 稍等片刻后开始下一段游动
+            setTimeout(() => {
+                if (!data.isEscaping) {
+                    this.setNewTarget(fish);
+                }
+            }, 1000 + Math.random() * 3000); // 1-4秒的休息时间
+        };
+        
+        // 开始沿路径游动
+        this.animationManager.animateAlongPath(
+            fish, 
+            swimmingPath.points, 
+            swimmingPath.duration
+        );
     }
 
     calculateDistance(x1, y1, x2, y2) {
@@ -589,6 +614,11 @@ class FlowFishSVG {
     handleResize() {
         this.screenWidth = window.innerWidth;
         this.screenHeight = window.innerHeight;
+        
+        // 更新自然游动系统的屏幕尺寸
+        this.naturalSwimming.updateScreenSize(this.screenWidth, this.screenHeight);
+        
+        console.log(`📐 屏幕尺寸变化: ${this.screenWidth}x${this.screenHeight}`);
         
         this.fishes.forEach(fish => {
             const data = fish.fishData;
@@ -667,6 +697,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.flowFish = new FlowFishSVG();
         console.log('🚀 Flow Fish SVG版本已成功启动！包含小丑鱼样式');
     }, 100);
+});
+
+// 页面卸载时清理动画
+window.addEventListener('beforeunload', () => {
+    if (window.flowFish && window.flowFish.animationManager) {
+        window.flowFish.animationManager.cleanup();
+    }
+    if (window.flowFish && window.flowFish.behaviorInterval) {
+        clearInterval(window.flowFish.behaviorInterval);
+    }
 });
 
 // 错误处理
