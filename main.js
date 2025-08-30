@@ -150,7 +150,7 @@ function toggleFishVisibility() {
 function registerGlobalShortcuts() {
   try {
     // Ctrl+Alt+F 切换显示/隐藏
-    globalShortcut.register('CommandOrControl+Alt+F', () => {
+    globalShortcut.register('CommandOrControl+Alt+N', () => {
       toggleFishVisibility();
     });
     
